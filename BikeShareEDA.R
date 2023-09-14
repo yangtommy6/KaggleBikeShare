@@ -27,7 +27,7 @@ plot3 <- ggplot()+
   geom_smooth(data=subset(bike, season == 2), aes(x= windspeed, y=humidity),alpha=0.5, fill="green")+
   geom_smooth(data=subset(bike, season == 3), aes(x= windspeed, y=humidity),alpha=0.5, fill="orange")+
   geom_smooth(data=subset(bike, season == 4), aes(x= windspeed, y=humidity),alpha=0.5, fill="blue")+
-  labs(
+  labs
     title = "windspeed vs humidity by season",
     x = "windspeed",   # X-axis label
     y = "Humidity"      # Y-axis label
