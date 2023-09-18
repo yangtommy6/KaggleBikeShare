@@ -13,8 +13,17 @@ view(myCleanData)
 ##Feature engineering
 
 library(tidymodels)
-my_recipe <- recipe(rFormula, data=myDataSet) %>% # Set model formula and d2
-  step_mutate(newVar=var1*var2) %>% #Create a new variable3
-  step_poly(var, degree=2) %>% #Create polynomial expansion of var4
-  step_date(timestamp, features="dow") %>% # gets day of week5
-  step_time(timestamp, features=c("hour", "minute")) %>%
+
+rFormula = 
+
+myrecipe <- recipe(~., data=bike) %>% 
+  step_date(datetime, features="dow") %>% # gets day of week5
+  step_time(datetime, features=c("hour", "minute"))
+prepped_recipe <- prep(myrecipe) # Sets up the preprocessing using myDataSet14
+bakedData <- bake(prepped_recipe, new_data= NULL)
+view(bakedData)
+
+
+
+
+
