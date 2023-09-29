@@ -115,6 +115,8 @@ library(tidymodels)
 # Load necessary libraries
 library(tidyverse)
 library(tidymodels)
+library(vroom)
+library(lubridate)
 library(rpart)
 train <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/train.csv")
 test <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/test.csv")
@@ -144,11 +146,11 @@ workflow <- workflow() %>%
 # Set up grid of tuning values
 grid <- grid_regular(
   cost_complexity(),
-  levels = 20
+  levels = 10
 )
 
 # Set up K-fold Cross-Validation
-folds <- vfold_cv(train, v = 5)
+folds <- vfold_cv(train, v = 3)
 
 # Find best tuning parameters
 res <- tune_grid(
@@ -165,11 +167,149 @@ fit <- final_workflow %>% fit(data = train)
 
 predictions <- fit %>% predict(new_data = test)
 
-# Extract predictions and prepare submission file
+
+
 submission <- tibble(
   datetime = test$datetime,
   count = predictions$.pred
 )
 
-write.csv(submission, "/Users/christian/Desktop/STAT348/Submission.csv", row.names = FALSE)
+write.csv(submission, "/Users/christian/Desktop/STAT348/KaggleBikeShare/Submission3.csv", row.names = FALSE)
+
+
+
+#########929
+
+write.csv(submission, "/Users/christian/Desktop/STAT348/KaggleBikeShare/Submission4.csv", row.names = FALSE)
+
+#Create a workflow with model and recipe
+
+#set up grid of tuning values
+#Setup grid of tuning values
+#setup K-fold CV
+#fIND BEST Tuning parameters
+#Finalize workflow and predict
+
+library(tidyverse)
+library(tidymodels)
+library(ranger)
+library(vroom)
+library(lubridate)
+library(rpart)
+
+train_data <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/train.csv")
+test_data <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/test.csv")
+
+
+rec <- recipe(count ~ ., data = train_data) %>%
+  step_normalize(all_numeric_predictors()) %>%
+  step_dummy(all_nominal_predictors())
+
+model <- rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+
+
+workflow <- workflow() %>%
+  add_model(model) %>%
+  add_recipe(rec)
+
+cv_folds <- vfold_cv(train_data, v = 5)
+
+grid <- grid_regular(
+  mtry(range = c(1, 10)),
+  min_n(range = c(1, 10)),
+  levels = 5  # This will create a 5x5 grid, adjust as needed
+)
+
+tune_results <- tune_grid(
+  workflow,
+  resamples = cv_folds,
+  grid = grid
+)
+
+best_params <- tune_results %>%
+  select_best("metric_of_interest")  # replace with your chosen metric, e.g., rmse
+
+final_workflow <- workflow %>%
+  finalize_workflow(best_params)
+
+fit <- final_workflow %>% fit(data = train)
+
+predictions <- fit %>% predict(new_data = test)
+
+
+
+submission <- tibble(
+  datetime = test_data$datetime,
+  count = predictions$.pred
+)
+
+write.csv(submission, "/Users/christian/Desktop/STAT348/KaggleBikeShare/Submission4.csv", row.names = FALSE)
+########################################################
+# Load necessary libraries
+library(tidyverse)
+library(tidymodels)
+library(vroom)
+library(lubridate)
+library(rpart)
+train <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/train.csv")
+test <- vroom("/Users/christian/Desktop/STAT348/KaggleBikeShare/test.csv")
+
+train <- select(train, -c(casual, registered))
+
+# Convert datetime to DateTime type
+train$datetime <- as.POSIXct(train$datetime, format="%Y-%m-%d %H:%M:%S")
+test$datetime <- as.POSIXct(test$datetime, format="%Y-%m-%d %H:%M:%S")
+
+# Define a recipe
+recipe <- recipe(count ~ ., data = train) %>%
+  step_date(datetime) %>%
+  step_rm(datetime)
+
+
+# Define a model with tuning parameter
+model <- rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+
+# Create a workflow
+workflow <- workflow() %>% 
+  add_model(model) %>% 
+  add_recipe(recipe)
+
+# Set up grid of tuning values
+grid <- grid_regular(
+  cost_complexity(),
+  levels = 10
+)
+
+# Set up K-fold Cross-Validation
+folds <- vfold_cv(train, v = 3)
+
+# Find best tuning parameters
+res <- tune_grid(
+  workflow,
+  resamples = folds,
+  grid = grid
+)
+
+best_params <- res %>% select_best("rmse")
+
+# Finalize workflow and predict
+final_workflow <- workflow %>% finalize_workflow(best_params)
+fit <- final_workflow %>% fit(data = train)
+
+predictions <- fit %>% predict(new_data = test)
+
+
+
+submission <- tibble(
+  datetime = test$datetime,
+  count = predictions$.pred
+)
+
+write.csv(submission, "/Users/christian/Desktop/STAT348/KaggleBikeShare/Submission3.csv", row.names = FALSE)
+
+
 
